@@ -112,16 +112,14 @@ class Block extends BlockBlot {
 
     /**
      * FIXME
-     * This is a tempory change to fix following 
+     * This is a temporary change to fix the followings 
      * 1. Can't add multuple new lines without losing the format.
      * 2. When setting content, the new lines are always formatless.
      * 3. Deleting a line should not result in clearing it's formats.
-     * 4. Cursor height / line height should be consistent unless user change formatting.
-     * 
      * In super method default blot ("BR") is appended if this blot is empty.
      * Since this "Block" class is extended by some other classes
      * this.domNode.nodeName === "P" is checked here but 
-     * a sperate child class should be added for "P" block and do this change
+     * a sperate child class should be added for "P" block and done this change there.
      */
     try {
       if( isEmptyP && this.prev ) {
