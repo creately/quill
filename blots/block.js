@@ -9,8 +9,21 @@ import {
 import Break from './break';
 import Inline from './inline';
 import TextBlot from './text';
+import Cursor from './cursor';
 
 const NEWLINE_LENGTH = 1;
+const TEXT_FORMAT_NODES = [
+  'SPAN',
+  'STRONG',
+  'B',
+  'EM',
+  'I',
+  'SUB',
+  'SUP',
+  'S',
+  'STRIKE',
+  'U',
+];
 
 class Block extends BlockBlot {
   constructor(scroll, domNode) {
@@ -94,8 +107,66 @@ class Block extends BlockBlot {
   }
 
   optimize(context) {
+    const isEmptyP = this.domNode.nodeName === "P" && this.children.length === 0;
     super.optimize(context);
+
+    /**
+     * FIXME
+     * This is a temporary change to fix the followings 
+     * 1. Can't add multuple new lines without losing the format.
+     * 2. When setting content, the new lines are always formatless.
+     * 3. Deleting a line should not result in clearing it's formats.
+     * In super method default blot ("BR") is appended if this blot is empty.
+     * Since this "Block" class is extended by some other classes
+     * this.domNode.nodeName === "P" is checked here but 
+     * a sperate child class should be added for "P" block and done this change there.
+     */
+    try {
+      if( isEmptyP && this.prev ) {
+        const formatNode = this.prev.children.tail.domNode.cloneNode(true);
+        if( formatNode.nodeType === Node.ELEMENT_NODE ) {
+          this.children.head.domNode.remove();
+          this.removeChild( this.children.head );
+          this.retainFormats(formatNode);
+          const newBr = document.createElement('BR');
+          const dn = this.getDeepestNode( formatNode );
+          dn.appendChild( newBr );
+          const formatBlot = this.scroll.create(formatNode);
+          this.appendChild( formatBlot );
+        }
+      } 
+    } catch (error) {
+    }
     this.cache = {};
+  }
+
+  /**
+   * Retains the style nodes specified in TEXT_FORMAT_NODES
+   * and removes all other nodes for the given element
+   */
+  retainFormats(element) {
+    const nodes = element.childNodes;
+    for (let i = 0; i < nodes.length; i += 1) {
+      const node = nodes[i];
+      const isCursorSpan = node.nodeName === "SPAN" && node.classList.contains( Cursor.className );
+      if (
+        isCursorSpan ||
+        node.nodeType === Node.TEXT_NODE ||
+        !TEXT_FORMAT_NODES.includes(node.nodeName)
+      ) {
+        node.parentNode.removeChild(node);
+        i -= 1;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        this.retainFormats(node);
+      }
+    }
+  }
+
+  getDeepestNode(node) {
+    if ( node.firstChild ) {
+      return this.getDeepestNode(node.firstChild);
+    }
+    return node;
   }
 
   path(index) {
