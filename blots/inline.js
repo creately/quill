@@ -1,4 +1,4 @@
-import { EmbedBlot, InlineBlot, Scope } from 'parchment';
+import { EmbedBlot, InlineBlot, Scope } from '@creately/parchment';
 import Break from './break';
 import Text from './text';
 

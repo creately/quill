@@ -1,4 +1,4 @@
-import { LeafBlot, Scope } from 'parchment';
+import { LeafBlot, Scope } from '@creately/parchment';
 import cloneDeep from 'lodash.clonedeep';
 import isEqual from 'lodash.isequal';
 import Emitter from './emitter';
