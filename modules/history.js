@@ -1,4 +1,4 @@
-import { Scope } from 'parchment';
+import { Scope } from '@creately/parchment';
 import Quill from '../core/quill';
 import Module from '../core/module';
 

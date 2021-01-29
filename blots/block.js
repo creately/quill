@@ -5,7 +5,7 @@ import {
   EmbedBlot,
   LeafBlot,
   Scope,
-} from 'parchment';
+} from '@creately/parchment';
 import Break from './break';
 import Inline from './inline';
 import TextBlot from './text';
@@ -114,7 +114,7 @@ class Block extends BlockBlot {
      * This is a tempory change to fix following 
      * 1. Can't add multuple new lines without losing the format.
      * 2. When setting content, the new lines are always formatless.
-     * 3. Deleting a line should not result in clearing it's formats.
+     * 3. Deleting a line should not result in clearing it's formats. => Fixed in parchment as permenent
      * 4. Cursor height / line height should be consistent unless user change formatting.
      * 
      * In super method default blot ("BR") is appended if this blot is empty.
@@ -123,6 +123,16 @@ class Block extends BlockBlot {
      * a sperate child class should be added for "P" block and do this change
      */
     try {
+      if(this.domNode.innerText === '' && this.children.length !== 0){
+        const leafBlot = getDescendentsOfLeafBlot(this)[0];
+        const lastElementBlot = leafBlot.parent;
+        if (leafBlot instanceof TextBlot) {
+          leafBlot.remove();
+          const child = this.scroll.create(Break.blotName);
+          lastElementBlot.appendChild(child);
+        }
+      }
+
       if( this.isFormatlessEmptyP( this.domNode )) {
         let formatNode;
         if ( this.prev && !this.isFormatlessEmptyP( this.prev.domNode )) {
@@ -268,8 +278,7 @@ BlockEmbed.scope = Scope.BLOCK_BLOT;
 // It is important for cursor behavior BlockEmbeds use tags that are block level elements
 
 function blockDelta(blot, filter = true) {
-  return blot
-    .descendants(LeafBlot)
+  return getDescendentsOfLeafBlot(blot)
     .reduce((delta, leaf) => {
       if (leaf.length() === 0) {
         return delta;
@@ -299,6 +308,13 @@ function bubbleFormats(blot, formats = {}, filter = true) {
     return formats;
   }
   return bubbleFormats(blot.parent, formats, filter);
+}
+
+function getDescendentsOfLeafBlot (blot) {
+  if(!blot){
+    return;
+  }
+  return blot.descendants(LeafBlot);
 }
 
 export { blockDelta, bubbleFormats, BlockEmbed, Block as default };

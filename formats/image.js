@@ -1,4 +1,4 @@
-import { EmbedBlot } from 'parchment';
+import { EmbedBlot } from '@creately/parchment';
 import { sanitize } from './link';
 
 const ATTRIBUTES = ['alt', 'height', 'width'];
