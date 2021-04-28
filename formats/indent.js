@@ -1,4 +1,4 @@
-import { ClassAttributor, Scope } from 'parchment';
+import { ClassAttributor, Scope } from '@creately/parchment';
 
 class IndentAttributor extends ClassAttributor {
   add(node, value) {

@@ -1,4 +1,4 @@
-import { TextBlot } from 'parchment';
+import { TextBlot } from '@creately/parchment';
 
 class Text extends TextBlot {}
 

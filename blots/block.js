@@ -5,12 +5,25 @@ import {
   EmbedBlot,
   LeafBlot,
   Scope,
-} from 'parchment';
+} from '@creately/parchment';
 import Break from './break';
 import Inline from './inline';
 import TextBlot from './text';
+import Cursor from './cursor';
 
 const NEWLINE_LENGTH = 1;
+const TEXT_FORMAT_NODES = [
+  'SPAN',
+  'STRONG',
+  'B',
+  'EM',
+  'I',
+  'SUB',
+  'SUP',
+  'S',
+  'STRIKE',
+  'U',
+];
 
 class Block extends BlockBlot {
   constructor(scroll, domNode) {
@@ -95,7 +108,107 @@ class Block extends BlockBlot {
 
   optimize(context) {
     super.optimize(context);
+
+    /**
+     * FIXME
+     * This is a tempory change to fix following 
+     * 1. Can't add multuple new lines without losing the format.
+     * 2. When setting content, the new lines are always formatless.
+     * 3. Deleting a line should not result in clearing it's formats. => Fixed in parchment as permenent
+     * 4. Cursor height / line height should be consistent unless user change formatting.
+     * 
+     * In super method default blot ("BR") is appended if this blot is empty.
+     * Since this "Block" class is extended by some other classes
+     * this.domNode.nodeName === "P" is checked here but 
+     * a sperate child class should be added for "P" block and do this change
+     */
+    try {
+      if(this.domNode.innerText === '' && this.children.length !== 0){
+        const leafBlot = getDescendentsOfLeafBlot(this)[0];
+        const lastElementBlot = leafBlot.parent;
+        if (leafBlot instanceof TextBlot) {
+          leafBlot.remove();
+          const child = this.scroll.create(Break.blotName);
+          lastElementBlot.appendChild(child);
+        }
+      }
+
+      if( this.isFormatlessEmptyP( this.domNode )) {
+        let formatNode;
+        if ( this.prev && !this.isFormatlessEmptyP( this.prev.domNode )) {
+          formatNode = this.prev.children.tail.domNode.cloneNode(true);
+        } else if ( this.next && !this.isFormatlessEmptyP( this.next.domNode ) ) {
+          formatNode = this.next.children.head.domNode.cloneNode(true);
+        }
+        if( formatNode && formatNode.nodeType === Node.ELEMENT_NODE ) {
+          this.children.head.domNode.remove();
+          this.removeChild( this.children.head );
+          this.retainFormats(formatNode);
+          const newBr = document.createElement('BR');
+          const dn = this.getDeepestNode( formatNode );
+          dn.appendChild( newBr );
+          const formatBlot = this.scroll.create(formatNode);
+          this.appendChild( formatBlot );
+        }
+      }
+      if( !this.isFormatlessEmptyP( this.domNode ) && this.prev && this.isFormatlessEmptyP( this.prev.domNode )) {
+        const formatNode = this.children.head.domNode.cloneNode(true);
+        this.applyToAllEmptyPrevs( this.prev, formatNode );
+      }
+      
+    } catch (error) {
+    }
     this.cache = {};
+  }
+
+  isFormatlessEmptyP( node ) {
+    return node.nodeName === "P" && node.innerHTML === `<br>`;
+  }
+
+  applyToAllEmptyPrevs( prev, formatNode ) {
+    if ( prev && this.isFormatlessEmptyP( prev.domNode )) {
+      if( formatNode.nodeType === Node.ELEMENT_NODE ) {
+        prev.children.head.domNode.remove();
+        prev.removeChild( prev.children.head );
+        this.retainFormats(formatNode);
+        const newBr = document.createElement('BR');
+        const dn = prev.getDeepestNode( formatNode );
+        dn.appendChild( newBr );
+        const formatBlot = prev.scroll.create(formatNode);
+        prev.appendChild( formatBlot );
+      }
+      this.applyToAllEmptyPrevs( prev.prev, formatNode );
+    }
+
+  }
+
+  /**
+   * Retains the style nodes specified in TEXT_FORMAT_NODES
+   * and removes all other nodes for the given element
+   */
+  retainFormats(element) {
+    const nodes = element.childNodes;
+    for (let i = 0; i < nodes.length; i += 1) {
+      const node = nodes[i];
+      const isCursorSpan = node.nodeName === "SPAN" && node.classList.contains( Cursor.className );
+      if (
+        isCursorSpan ||
+        node.nodeType === Node.TEXT_NODE ||
+        !TEXT_FORMAT_NODES.includes(node.nodeName)
+      ) {
+        node.parentNode.removeChild(node);
+        i -= 1;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        this.retainFormats(node);
+      }
+    }
+  }
+
+  getDeepestNode(node) {
+    if ( node.firstChild ) {
+      return this.getDeepestNode(node.firstChild);
+    }
+    return node;
   }
 
   path(index) {
@@ -165,8 +278,7 @@ BlockEmbed.scope = Scope.BLOCK_BLOT;
 // It is important for cursor behavior BlockEmbeds use tags that are block level elements
 
 function blockDelta(blot, filter = true) {
-  return blot
-    .descendants(LeafBlot)
+  return getDescendentsOfLeafBlot(blot)
     .reduce((delta, leaf) => {
       if (leaf.length() === 0) {
         return delta;
@@ -196,6 +308,13 @@ function bubbleFormats(blot, formats = {}, filter = true) {
     return formats;
   }
   return bubbleFormats(blot.parent, formats, filter);
+}
+
+function getDescendentsOfLeafBlot (blot) {
+  if(!blot){
+    return;
+  }
+  return blot.descendants(LeafBlot);
 }
 
 export { blockDelta, bubbleFormats, BlockEmbed, Block as default };

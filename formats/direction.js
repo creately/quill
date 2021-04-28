@@ -1,4 +1,4 @@
-import { Attributor, ClassAttributor, Scope, StyleAttributor } from 'parchment';
+import { Attributor, ClassAttributor, Scope, StyleAttributor } from '@creately/parchment';
 
 const config = {
   scope: Scope.BLOCK,

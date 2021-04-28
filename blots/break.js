@@ -1,4 +1,4 @@
-import { EmbedBlot } from 'parchment';
+import { EmbedBlot } from '@creately/parchment';
 
 class Break extends EmbedBlot {
   static value() {

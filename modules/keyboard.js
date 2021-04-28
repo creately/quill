@@ -1,7 +1,7 @@
 import cloneDeep from 'lodash.clonedeep';
 import isEqual from 'lodash.isequal';
 import Delta, { AttributeMap } from 'quill-delta';
-import { EmbedBlot, Scope, TextBlot } from 'parchment';
+import { EmbedBlot, Scope, TextBlot } from '@creately/parchment';
 import Quill from '../core/quill';
 import logger from '../core/logger';
 import Module from '../core/module';
@@ -25,6 +25,7 @@ class Keyboard extends Module {
   constructor(quill, options) {
     super(quill, options);
     this.bindings = {};
+    this.disabledShortcuts = [];
     Object.keys(this.options.bindings).forEach(name => {
       if (this.options.bindings[name]) {
         this.addBinding(this.options.bindings[name]);
@@ -110,6 +111,13 @@ class Keyboard extends Module {
 
   listen() {
     this.quill.root.addEventListener('keydown', evt => {
+      if (this.disabledShortcuts.length) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const sc of this.disabledShortcuts) {
+          const noMatch = Object.keys(sc).find(key => evt[key] !== sc[key]);
+          if (!noMatch) return;
+        }
+      }
       if (evt.defaultPrevented || evt.isComposing) return;
       const bindings = (this.bindings[evt.key] || []).concat(
         this.bindings[evt.which] || [],

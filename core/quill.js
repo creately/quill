@@ -1,7 +1,7 @@
 import Delta from 'quill-delta';
 import cloneDeep from 'lodash.clonedeep';
 import merge from 'lodash.merge';
-import * as Parchment from 'parchment';
+import * as Parchment from '@creately/parchment';
 import Editor from './editor';
 import Emitter from './emitter';
 import Module from './module';
@@ -404,6 +404,17 @@ class Quill {
     if (index == null) {
       this.selection.setRange(null, length || Quill.sources.API);
     } else {
+      if (index instanceof Range) {
+        const lines = this.scroll.lines();
+        let currIndex = 0;
+        for ( let i = 0; i < lines.length; i ++ ) {
+          if ( currIndex === index.index && lines[i].length() === index.length ) {
+            index.length = index.length - 1;
+            break;
+          }
+          currIndex = currIndex + lines[i].length();
+        }
+      }
       [index, length, , source] = overload(index, length, source);
       this.selection.setRange(new Range(Math.max(0, index), length), source);
       if (source !== Emitter.sources.SILENT) {

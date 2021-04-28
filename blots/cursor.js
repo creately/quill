@@ -1,4 +1,4 @@
-import { EmbedBlot, Scope } from 'parchment';
+import { EmbedBlot, Scope } from '@creately/parchment';
 import TextBlot from './text';
 
 class Cursor extends EmbedBlot {

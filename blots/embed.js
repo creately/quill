@@ -1,4 +1,4 @@
-import { EmbedBlot } from 'parchment';
+import { EmbedBlot } from '@creately/parchment';
 import TextBlot from './text';
 
 const GUARD_TEXT = '\uFEFF';
